@@ -62,11 +62,15 @@ const loginUser=async(req,res)=>{
 
 const google=async(req,res)=>{
   const {name,email,googlePhotoUrl}=req.body;
+  console.log(name,email,googlePhotoUrl);
   try {
     const user=await User.findOne({email}).select('-password');
+    console.log(user);
     if(user){
-      const token=User.generateAccessToken();
-      res.status(200).cookie('access-token',token,option).json({success:true,message:'user logged-in successfully'});
+      const token=await user.generateAccessToken();
+
+      console.log(token);
+      res.status(200).cookie('access-token',token,option).json({success:true,accessToken:token,message:'user logged-in successfully',user});
     }else{
       const generatePassword=Math.random().toString(36).slice(-8);
 
@@ -79,13 +83,14 @@ const google=async(req,res)=>{
         profilePicture:googlePhotoUrl
       })
 
-      const token=User.generateAccessToken();
+      const token=await addUser.generateAccessToken();
+      console.log(token);
 
-      res.status(200).cookie('access-token',token,option).json({success:true,message:'user added'});
+      res.status(200).cookie('access-token',token,option).json({success:true,accessToken:token,message:'user logged-in successfully',user:addUser});
     }
 
   } catch (error) {
-    
+    console.log(error.message);
   }
 }
 
@@ -98,7 +103,7 @@ const updateUser=async(req,res)=>{
       const user=await User.findByIdAndUpdate(req.user._id,{$set:{
         username:req.body.username,
         email:req.body.email,
-        profilePicture:req.body.picture,
+        profilePicture:req.body.profilePicture,
         password:req.body.password
       }},{new:true}).select('-password');
 
@@ -109,12 +114,12 @@ const updateUser=async(req,res)=>{
 }
 
 const deleteUser=async(req,res)=>{
-  if(!req.user._id && req.user._id !== req.params.id){
+  if(req.user.userRole !== 'admin' && req.user._id !== req.params.id){
     throw new ApiError(403,'you are not allowed to delete.')
   }
 console.log(req.user._id);
   try {
-    await User.findByIdAndDelete(req.user._id);
+    await User.findByIdAndDelete(req.params.id);
     res.status(200).json({success:true,message:'user deleted successfully'});
   } catch (error) {
     throw new ApiError(402,error.message);
@@ -130,7 +135,8 @@ const signoutUser=async(req,res)=>{
 }
 
 const getUsers=async(req,res)=>{
-  if(req.user.role !== 'admin'){
+  console.log(req.user);
+  if(req.user.userRole !== 'admin'){
     throw new ApiError(404,'not allowed')
   }
 
@@ -159,4 +165,4 @@ const getUsers=async(req,res)=>{
   }
 }
 
-export { testUser, registerUser, loginUser, updateUser, signoutUser,deleteUser, getUsers };
+export { testUser, registerUser, loginUser, updateUser, signoutUser,deleteUser, getUsers, google };

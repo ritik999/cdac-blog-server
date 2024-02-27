@@ -2,7 +2,8 @@ import { Posts } from "../models/post.model.js";
 import { ApiError } from "../utils/apiError.js";
 
 const create = async (req, res) => {
-  if (req.user.role !== "admin") {
+  console.log(req.user);
+  if (req.user.userRole !== "admin") {
     throw new ApiError(401, "you are not allowed to create post");
   }
 
@@ -37,10 +38,12 @@ const getPosts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.order == "asc" ? 1 : -1;
 
+    // console.log(req.query.postSlug);
+
     const posts=await Posts.find({
-        ...(req.query.userId && {userId:req.query.userId}),
+        ...(req.query.userId && {user:req.query.userId}),
         ...(req.query.category && {category:req.query.category}),
-        ...(req.query.postId && {postId:req.query.postId}),
+        ...(req.query.postId && {_id:req.query.postId}),
         ...(req.query.slug) && {slug:req.query.slug},
         ...(req.query.searchTerm && {
             $or:[
@@ -86,7 +89,7 @@ const deletePost=async(req,res)=>{
 }
 
 const updatePost=async(req,res)=>{
-  if(!(req.user.role=='admin' || req.user._id == req.params.postId)){
+  if(req.user.userRole !=='admin' && req.user._id == req.params.userId){
     throw new ApiError(404,'not allowed')
   }
 

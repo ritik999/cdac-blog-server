@@ -9,6 +9,7 @@ export const verifyUser=(req,_,next)=>{
     }
 
     jwt.verify(token,process.env.ACCESS_KEY_SECRET,async(err,user)=>{
+        console.log(user);
         if(err){
             throw new ApiError(402,'unauthorized user');
         }else{
